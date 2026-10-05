@@ -1,4 +1,4 @@
-"""Groq client wrapper: chat (Llama 3.3 70B), vision (Llama 4 Scout) and speech-to-text (Whisper).
+"""Groq client wrapper: chat (GPT-OSS 120B), vision (Qwen 3.8) and speech-to-text (Whisper).
 
 Every call is retried once on transient failures (timeouts, connection errors, 429, 5xx);
 if the retry also fails an :class:`LLMError` is raised so the handler can apologise gracefully.
@@ -105,7 +105,14 @@ class GroqLLM:
                     },
                 ],
                 temperature=0.3,
-                max_tokens=1024,
+                # Groq's free tier caps Qwen output at 1,000 tokens/min, so stay under it.
+                max_tokens=900,
+                # Skip Qwen's thinking step: faster and cheaper on that budget.
+                extra_body=(
+                    {"reasoning_effort": "none"}
+                    if self._settings.vision_model.startswith("qwen/")
+                    else None
+                ),
             )
             return (resp.choices[0].message.content or "").strip()
 
