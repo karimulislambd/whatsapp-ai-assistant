@@ -31,10 +31,10 @@ Send it a message on WhatsApp — or open the [web demo](#-web-demo-for-recruite
 
 | Input | What happens | Model (via Groq) |
 |---|---|---|
-| 💬 **Text** | Chats with you and remembers the last **10 turns** per user | `llama-3.3-70b-versatile` |
+| 💬 **Text** | Chats with you and remembers the last **10 turns** per user | `openai/gpt-oss-120b` |
 | 🎙️ **Voice note** | Downloads the audio, transcribes it, replies with **“Transcript: …”** and then answers it | `whisper-large-v3` |
-| 🖼️ **Image** (+ optional caption) | Describes / analyses the image or answers your caption’s question | `meta-llama/llama-4-scout-17b-16e-instruct` |
-| 👤 **/about** | Switches to *“Ask about Karimul”* mode — answers **only** from [`data/profile.md`](data/profile.md) | `llama-3.3-70b-versatile` |
+| 🖼️ **Image** (+ optional caption) | Describes / analyses the image or answers your caption’s question | `qwen/qwen3.8-27b` |
+| 👤 **/about** | Switches to *“Ask about Karimul”* mode — answers **only** from [`data/profile.md`](data/profile.md) | `openai/gpt-oss-120b` |
 
 **Commands:** `/help` · `/reset` (clear memory) · `/about` (profile Q&A mode) · `/chat` (back to general mode). Any other message type (stickers, locations, documents…) gets a friendly “I can’t handle that yet” reply.
 
@@ -64,8 +64,8 @@ flowchart LR
         CORE["handlers.Assistant<br/>rate limit · commands · router"] <--> DB[("SQLite<br/>memory · modes<br/>dedupe · rate limits")]
     end
 
-    CORE -->|text| G1["Groq · Llama 3.3 70B"]
-    CORE -->|image| G2["Groq · Llama 4 Scout"]
+    CORE -->|text| G1["Groq · GPT-OSS 120B"]
+    CORE -->|image| G2["Groq · Qwen 3.8"]
     CORE -->|voice| G3["Groq · Whisper large-v3"]
     SVC -->|"send · mark read · download media"| META
     META -->|reply| U

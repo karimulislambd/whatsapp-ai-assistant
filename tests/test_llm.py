@@ -37,7 +37,7 @@ def llm() -> GroqLLM:
 async def test_chat_returns_content_and_uses_chat_model(llm):
     route = respx.post(f"{GROQ}/chat/completions").respond(200, json=completion(" Hi! "))
     assert await llm.chat([{"role": "user", "content": "hey"}]) == "Hi!"
-    assert json.loads(route.calls.last.request.content)["model"] == "llama-3.3-70b-versatile"
+    assert json.loads(route.calls.last.request.content)["model"] == "openai/gpt-oss-120b"
 
 
 @respx.mock
@@ -71,7 +71,7 @@ async def test_vision_sends_base64_image(llm):
     out = await llm.analyze_image(b"\x89PNG", "image/png", "What is it?", "sys")
     assert out == "a cat"
     body = json.loads(route.calls.last.request.content)
-    assert body["model"] == "meta-llama/llama-4-scout-17b-16e-instruct"
+    assert body["model"] == "qwen/qwen3.8-27b"
     parts = body["messages"][1]["content"]
     assert parts[0] == {"type": "text", "text": "What is it?"}
     assert parts[1]["image_url"]["url"].startswith("data:image/png;base64,")

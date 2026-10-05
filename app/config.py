@@ -13,8 +13,8 @@ class Settings(BaseSettings):
 
     # Groq
     groq_api_key: str = ""
-    chat_model: str = "llama-3.3-70b-versatile"
-    vision_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    chat_model: str = "openai/gpt-oss-120b"
+    vision_model: str = "qwen/qwen3.8-27b"
     whisper_model: str = "whisper-large-v3"
     llm_timeout_seconds: float = 60.0
 
