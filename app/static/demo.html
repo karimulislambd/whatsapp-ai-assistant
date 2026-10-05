@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#202c33">
+<meta name="description" content="Try Md Karimul Islam's multimodal WhatsApp AI assistant in your browser: chat, voice notes and image analysis powered by Groq.">
+<title>WhatsApp AI Assistant · Demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%2300a884'/%3E%3Cpath d='M10 21l1.2-3.6A6.5 6.5 0 1 1 14 20l-4 1z' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0b141a;
+    --panel: #202c33;
+    --panel-2: #2a3942;
+    --bubble-in: #202c33;
+    --bubble-out: #005c4b;
+    --text: #e9edef;
+    --muted: #8696a0;
+    --accent: #00a884;
+    --accent-2: #25d366;
+    --blue-tick: #53bdeb;
+    --danger: #f15c6d;
+    --system: #182229;
+    --shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #111b21;
+    color: var(--text);
+    font: 14.5px/1.42 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 980px;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+  @media (min-width: 1000px) {
+    body { padding: 19px 0; }
+    .app { height: calc(100dvh - 38px); border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  }
+
+  /* Header */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; background: var(--panel); min-height: 60px; z-index: 2;
+  }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex: none;
+    background: linear-gradient(135deg, #00a884, #027eb5);
+    display: grid; place-items: center; font-weight: 700; color: #fff; font-size: 16px;
+  }
+  .who { flex: 1; min-width: 0; }
+  .who h1 { font-size: 16px; font-weight: 500; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .who .status { font-size: 13px; color: var(--muted); margin-top: 1px; height: 18px; }
+  .who .status.typing { color: var(--accent-2); }
+  .mode-pill {
+    font-size: 12px; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+    background: var(--panel-2); color: var(--muted); border: 1px solid transparent;
+  }
+  .mode-pill.about { color: #ffd279; border-color: rgba(255, 210, 121, .35); }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent;
+    color: var(--muted); display: grid; place-items: center; cursor: pointer; flex: none;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,.06); color: var(--text); }
+  .icon-btn:focus-visible, .chip:focus-visible, .send:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .icon-btn svg { width: 22px; height: 22px; }
+
+  /* Chat */
+  main {
+    flex: 1; overflow-y: auto; padding: 12px 6% 8px;
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      radial-gradient(rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 22px 22px, 22px 22px;
+    background-position: 0 0, 11px 11px;
+    scroll-behavior: smooth;
+  }
+  @media (max-width: 640px) { main { padding: 10px 10px 6px; } }
+  .day {
+    align-self: center; margin: 6px auto 10px; width: fit-content;
+    background: var(--system); color: var(--muted); font-size: 12.5px;
+    padding: 5px 12px; border-radius: 7px; box-shadow: var(--shadow);
+  }
+  .notice {
+    margin: 0 auto 14px; max-width: 520px; text-align: center;
+    background: var(--system); color: #ffd279; font-size: 12.5px;
+    padding: 8px 12px; border-radius: 7px; box-shadow: var(--shadow);
+  }
+  .notice a { color: var(--blue-tick); }
+  .row { display: flex; margin: 2px 0; }
+  .row.out { justify-content: flex-end; }
+  .row + .row.first { margin-top: 10px; }
+  .bubble {
+    position: relative; max-width: min(78%, 560px);
+    padding: 6px 8px 8px 9px; border-radius: 7.5px;
+    box-shadow: var(--shadow); word-wrap: break-word; overflow-wrap: anywhere;
+    animation: pop .16s ease-out;
+  }
+  @media (max-width: 640px) { .bubble { max-width: 88%; } }
+  @keyframes pop { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .in .bubble { background: var(--bubble-in); }
+  .out .bubble { background: var(--bubble-out); }
+  .first.in .bubble { border-top-left-radius: 0; }
+  .first.out .bubble { border-top-right-radius: 0; }
+  .first.in .bubble::before, .first.out .bubble::before {
+    content: ""; position: absolute; top: 0; width: 8px; height: 13px;
+  }
+  .first.in .bubble::before { left: -8px; background: linear-gradient(to top right, transparent 50%, var(--bubble-in) 50%); }
+  .first.out .bubble::before { right: -8px; background: linear-gradient(to top left, transparent 50%, var(--bubble-out) 50%); }
+  .text { white-space: pre-wrap; }
+  .text code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; background: rgba(0,0,0,.25); padding: 1px 4px; border-radius: 4px; }
+  .text pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; background: rgba(0,0,0,.25); padding: 8px; border-radius: 6px; overflow-x: auto; margin: 4px 0; white-space: pre-wrap; }
+  .text a { color: var(--blue-tick); }
+  .meta {
+    float: right; margin: 6px 0 -4px 10px; font-size: 11px; color: rgba(233,237,239,.6);
+    display: inline-flex; align-items: center; gap: 3px; position: relative; top: 2px;
+  }
+  .meta svg { width: 16px; height: 11px; color: var(--blue-tick); }
+  .bubble img { display: block; max-width: 100%; max-height: 320px; border-radius: 6px; margin-bottom: 4px; }
+  .bubble audio { display: block; width: 240px; max-width: 100%; margin-bottom: 2px; }
+  .bubble.error { background: #3b1f24; }
+  .typing-bubble { display: inline-flex; gap: 4px; padding: 12px 14px; }
+  .typing-bubble span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite ease-in-out; }
+  .typing-bubble span:nth-child(2) { animation-delay: .2s; }
+  .typing-bubble span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+
+  /* Chips */
+  .chips {
+    display: flex; gap: 8px; padding: 8px 12px 0; overflow-x: auto; background: var(--bg);
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none; border: 1px solid #2f3b43; background: var(--panel); color: var(--text);
+    border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip.cmd { color: var(--accent-2); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+
+  /* Composer */
+  .preview {
+    display: none; align-items: center; gap: 10px; margin: 8px 12px 0;
+    background: var(--panel); border-radius: 8px; padding: 8px;
+  }
+  .preview.show { display: flex; }
+  .preview img { width: 54px; height: 54px; object-fit: cover; border-radius: 6px; }
+  .preview .name { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  footer {
+    display: flex; align-items: flex-end; gap: 6px; padding: 8px 10px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom)); background: var(--panel);
+    margin-top: 8px;
+  }
+  .input-wrap {
+    flex: 1; display: flex; align-items: flex-end; background: var(--panel-2);
+    border-radius: 8px; min-height: 42px; padding: 0 4px;
+  }
+  textarea {
+    flex: 1; resize: none; border: 0; outline: 0; background: transparent; color: var(--text);
+    font: inherit; font-size: 15px; padding: 10px 8px; max-height: 140px; min-height: 42px;
+  }
+  textarea::placeholder { color: var(--muted); }
+  .send {
+    width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent);
+    color: #111b21; display: grid; place-items: center; cursor: pointer; flex: none;
+    transition: transform .1s ease;
+  }
+  .send:active { transform: scale(.94); }
+  .send:disabled { opacity: .5; cursor: default; }
+  .send svg { width: 22px; height: 22px; }
+  .send.recording { background: var(--danger); color: #fff; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(241,92,109,.5); } 50% { box-shadow: 0 0 0 8px rgba(241,92,109,0); } }
+  .rec-timer { display: none; align-self: center; color: var(--danger); font-variant-numeric: tabular-nums; font-size: 14px; padding: 0 8px; }
+  .rec-timer.show { display: block; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="avatar" aria-hidden="true">K</div>
+    <div class="who">
+      <h1>Karimul's AI Assistant</h1>
+      <div class="status" id="status">online</div>
+    </div>
+    <span class="mode-pill" id="modePill" title="Current mode">General chat</span>
+    <a class="icon-btn" href="https://github.com/karimulislambd/whatsapp-ai-assistant" target="_blank" rel="noopener" title="Source code on GitHub" aria-label="Source code on GitHub">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>
+    </a>
+  </header>
+
+  <main id="chat" aria-live="polite" aria-label="Conversation">
+    <div class="day">TODAY</div>
+    <div class="notice">
+      🔒 Web demo of a WhatsApp bot — it runs through the <b>same backend</b> as the real WhatsApp number
+      (same router, memory and modes). Messages are processed by Groq and not stored beyond your last 10 exchanges.
+    </div>
+  </main>
+
+  <div class="chips" id="chips" aria-label="Suggestions">
+    <button class="chip cmd" data-send="/help">/help</button>
+    <button class="chip cmd" data-send="/about">/about</button>
+    <button class="chip" data-send="What projects has Karimul built?">What has Karimul built?</button>
+    <button class="chip" data-send="Explain RAG in 3 short bullet points">Explain RAG</button>
+    <button class="chip cmd" data-send="/chat">/chat</button>
+    <button class="chip cmd" data-send="/reset">/reset</button>
+  </div>
+
+  <div class="preview" id="preview">
+    <img id="previewImg" alt="">
+    <div class="name" id="previewName"></div>
+    <button class="icon-btn" id="clearFile" title="Remove attachment" aria-label="Remove attachment">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+
+  <footer>
+    <button class="icon-btn" id="attach" title="Attach an image" aria-label="Attach an image">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></svg>
+    </button>
+    <input type="file" id="file" accept="image/*,audio/*" class="sr-only" tabindex="-1">
+    <div class="input-wrap">
+      <label for="input" class="sr-only">Message</label>
+      <textarea id="input" rows="1" placeholder="Type a message" autocomplete="off"></textarea>
+      <span class="rec-timer" id="recTimer">● 0:00</span>
+    </div>
+    <button class="send" id="send" aria-label="Record voice note" title="Record a voice note">
+      <svg id="iconMic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 1 0-7 0v6A3.5 3.5 0 0 0 12 15zm6-3.5a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.9V20H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.6a6 6 0 0 0 5-5.9z"/></svg>
+      <svg id="iconSend" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M3.4 20.4l17.5-7.5a1 1 0 0 0 0-1.8L3.4 3.6a.9.9 0 0 0-1.3 1L4 11l9 1-9 1-1.9 6.4a.9.9 0 0 0 1.3 1z"/></svg>
+    </button>
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const chat = $("chat"), input = $("input"), sendBtn = $("send"), fileInput = $("file");
+  const statusEl = $("status"), modePill = $("modePill");
+  const iconMic = $("iconMic"), iconSend = $("iconSend"), recTimer = $("recTimer");
+  const MODE_LABELS = { chat: "General chat", about: "About Karimul" };
+
+  // ---- session (per-browser; storage may be blocked, so fall back to an in-memory id)
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } },
+  };
+  const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+  let sessionId = store.get("wa-demo-session");
+  if (!sessionId || !/^[A-Za-z0-9_-]{8,64}$/.test(sessionId)) { sessionId = newId(); store.set("wa-demo-session", sessionId); }
+  setMode(store.get("wa-demo-mode") || "chat");
+
+  let pendingFile = null, busy = false, lastSide = null;
+
+  // ---- rendering helpers
+  const time = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // WhatsApp-style formatting: ```mono```, `code`, *bold*, _italic_, ~strike~, links.
+  function formatWhatsApp(raw) {
+    let s = escapeHtml(raw);
+    const blocks = [];
+    s = s.replace(/```([\s\S]*?)```/g, (_, code) => { blocks.push(`<pre>${code.replace(/^\n/, "")}</pre>`); return `\u0000${blocks.length - 1}\u0000`; });
+    s = s.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+    s = s.replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>");
+    s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?:;]|$)/gm, "$1<b>$2</b>");
+    s = s.replace(/(^|[\s(])_([^_\n]+)_(?=[\s).,!?:;]|$)/gm, "$1<i>$2</i>");
+    s = s.replace(/(^|[\s(])~([^~\n]+)~(?=[\s).,!?:;]|$)/gm, "$1<s>$2</s>");
+    s = s.replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+    return s.replace(/\u0000(\d+)\u0000/g, (_, i) => blocks[+i]);
+  }
+
+  const TICKS = '<svg viewBox="0 0 16 11" fill="currentColor"><path d="M11.1.6 4.9 8.2 2.2 5.6l-.9.9 3.7 3.6L12 1.4zM14.6.6 8.4 8.2l-.7-.7-.9 1 1.7 1.6L15.5 1.4z"/></svg>';
+
+  function addBubble(side, { text = "", html = "", media = null, error = false } = {}) {
+    const row = document.createElement("div");
+    row.className = `row ${side}` + (lastSide !== side ? " first" : "");
+    lastSide = side;
+    const bubble = document.createElement("div");
+    bubble.className = "bubble" + (error ? " error" : "");
+    if (media) bubble.appendChild(media);
+    if (text || html) {
+      const t = document.createElement("span");
+      t.className = "text";
+      t.innerHTML = html || formatWhatsApp(text);
+      bubble.appendChild(t);
+    }
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.innerHTML = time() + (side === "out" ? " " + TICKS : "");
+    bubble.appendChild(meta);
+    row.appendChild(bubble);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+    return row;
+  }
+
+  function showTyping(on) {
+    statusEl.textContent = on ? "typing…" : "online";
+    statusEl.classList.toggle("typing", on);
+    const existing = $("typing");
+    if (on && !existing) {
+      const row = document.createElement("div");
+      row.id = "typing";
+      row.className = "row in" + (lastSide !== "in" ? " first" : "");
+      row.innerHTML = '<div class="bubble typing-bubble" aria-label="Assistant is typing"><span></span><span></span><span></span></div>';
+      chat.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+    } else if (!on && existing) existing.remove();
+  }
+
+  function setMode(mode) {
+    modePill.textContent = MODE_LABELS[mode] || MODE_LABELS.chat;
+    modePill.classList.toggle("about", mode === "about");
+    store.set("wa-demo-mode", mode);
+  }
+
+  function refreshButton() {
+    const hasContent = input.value.trim() || pendingFile;
+    iconMic.style.display = hasContent || recorder ? "none" : "";
+    iconSend.style.display = hasContent || recorder ? "" : "none";
+    sendBtn.setAttribute("aria-label", recorder ? "Stop and send voice note" : hasContent ? "Send" : "Record voice note");
+    sendBtn.title = sendBtn.getAttribute("aria-label");
+  }
+
+  // ---- networking
+  async function send({ text = "", file = null }) {
+    if (busy) return;
+    busy = true; sendBtn.disabled = true;
+
+    let media = null;
+    if (file) {
+      const url = URL.createObjectURL(file);
+      if (file.type.startsWith("image/")) { media = new Image(); media.src = url; media.alt = "Uploaded image"; }
+      else { media = document.createElement("audio"); media.controls = true; media.src = url; }
+    }
+    addBubble("out", { text, media });
+    showTyping(true);
+
+    const form = new FormData();
+    form.append("session_id", sessionId);
+    form.append("message", text);
+    if (file) form.append("file", file, file.name || "upload");
+
+    try {
+      const res = await fetch("/api/chat", { method: "POST", body: form });
+      if (!res.ok) {
+        let detail = `Request failed (${res.status})`;
+        try { const j = await res.json(); if (typeof j.detail === "string") detail = j.detail; } catch { /* ignore */ }
+        throw new Error(detail);
+      }
+      const data = await res.json();
+      showTyping(false);
+      for (const [i, reply] of data.replies.entries()) {
+        if (i) { showTyping(true); await new Promise((r) => setTimeout(r, 450)); showTyping(false); }
+        addBubble("in", { text: reply });
+      }
+      setMode(data.mode);
+    } catch (err) {
+      showTyping(false);
+      addBubble("in", { text: `⚠️ ${err.message || "Network error"}. Please try again.`, error: true });
+    } finally {
+      busy = false; sendBtn.disabled = false; input.focus();
+    }
+  }
+
+  function submit() {
+    const text = input.value.trim();
+    if (!text && !pendingFile) return;
+    const file = pendingFile;
+    input.value = ""; autosize(); clearFile();
+    send({ text, file });
+  }
+
+  // ---- attachments
+  function setFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/") && !file.type.startsWith("audio/")) {
+      addBubble("in", { text: "⚠️ Please choose an image or an audio file.", error: true });
+      return;
+    }
+    pendingFile = file;
+    $("previewName").textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB` + (file.type.startsWith("image/") ? " — add a caption to ask something specific" : "");
+    const img = $("previewImg");
+    if (file.type.startsWith("image/")) { img.src = URL.createObjectURL(file); img.style.display = ""; }
+    else { img.removeAttribute("src"); img.style.display = "none"; }
+    $("preview").classList.add("show");
+    refreshButton();
+    input.focus();
+  }
+  function clearFile() {
+    pendingFile = null; fileInput.value = "";
+    $("preview").classList.remove("show");
+    refreshButton();
+  }
+
+  // ---- voice notes (MediaRecorder)
+  let recorder = null, recChunks = [], recStart = 0, recTick = null;
+  async function toggleRecording() {
+    if (recorder) { recorder.stop(); return; }
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+      addBubble("in", { text: "⚠️ Voice recording isn't supported in this browser — you can upload an audio file with 📎 instead.", error: true });
+      return;
+    }
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch { addBubble("in", { text: "⚠️ Microphone permission was denied.", error: true }); return; }
+    const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
+    recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    recChunks = [];
+    recorder.ondataavailable = (e) => e.data.size && recChunks.push(e.data);
+    recorder.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      clearInterval(recTick);
+      recTimer.classList.remove("show"); input.style.display = ""; sendBtn.classList.remove("recording");
+      const type = (recorder.mimeType || "audio/webm").split(";")[0];
+      const ext = type.includes("ogg") ? "ogg" : type.includes("mp4") ? "m4a" : "webm";
+      const blob = new Blob(recChunks, { type });
+      recorder = null; refreshButton();
+      if (Date.now() - recStart < 700) return; // accidental tap
+      send({ file: new File([blob], `voice-note.${ext}`, { type }) });
+    };
+    recorder.start();
+    recStart = Date.now();
+    input.style.display = "none"; recTimer.classList.add("show"); sendBtn.classList.add("recording");
+    recTimer.textContent = "● 0:00";
+    recTick = setInterval(() => {
+      const s = Math.floor((Date.now() - recStart) / 1000);
+      recTimer.textContent = `● ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+      if (s >= 120) recorder && recorder.stop();
+    }, 250);
+    refreshButton();
+  }
+
+  // ---- events
+  function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 140) + "px"; refreshButton(); }
+  input.addEventListener("input", autosize);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); submit(); }
+  });
+  sendBtn.addEventListener("click", () => (input.value.trim() || pendingFile ? submit() : toggleRecording()));
+  $("attach").addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => setFile(fileInput.files[0]));
+  $("clearFile").addEventListener("click", clearFile);
+  $("chips").addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-send]");
+    if (chip) send({ text: chip.dataset.send });
+  });
+  input.addEventListener("paste", (e) => {
+    const item = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith("image/"));
+    if (item) { e.preventDefault(); setFile(item.getAsFile()); }
+  });
+  chat.addEventListener("dragover", (e) => e.preventDefault());
+  chat.addEventListener("drop", (e) => { e.preventDefault(); setFile(e.dataTransfer.files[0]); });
+
+  addBubble("in", { text: "👋 Hi! I'm *Karimul's AI assistant* — the same bot that answers on WhatsApp.\n\nSend me a message, an image 📎 or a voice note 🎙️. Type /about to ask about Karimul, or /help for all commands." });
+  refreshButton();
+  input.focus();
+})();
+</script>
+</body>
+</html>
