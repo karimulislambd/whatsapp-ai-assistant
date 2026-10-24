@@ -12,14 +12,12 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-### [▶ Try the live web demo](https://YOUR-RENDER-URL.onrender.com/demo) &nbsp;·&nbsp; [Architecture](#-architecture) &nbsp;·&nbsp; [Meta setup](#-whatsapp-setup-meta) &nbsp;·&nbsp; [Deploy](#-deploy-to-render-free-tier)
+### [Architecture](#-architecture) &nbsp;·&nbsp; [Meta setup](#-whatsapp-setup-meta) &nbsp;·&nbsp; [Deploy](#-deploy-to-render-free-tier)
 
 <!-- TODO(demo-gif): record a short GIF (WhatsApp on a phone: text → voice note → image → /about),
      save it as docs/demo.gif (~800px wide, < 5 MB) and replace the screenshot below with:
      <img src="docs/demo.gif" alt="Demo: chatting, sending a voice note and an image" width="720"> -->
 <img src="docs/demo-screenshot.png" alt="Web demo: WhatsApp-styled chat with the assistant, showing /about mode and general chat" width="720">
-
-<sub>🎬 <i>Demo GIF coming soon</i> — the screenshot above is the <a href="#-web-demo-for-recruiters">/demo</a> web chat UI.</sub>
 
 </div>
 
@@ -195,7 +193,7 @@ You need a public **HTTPS** URL for the webhook first — deploy to [Render](#-d
 2. On [render.com](https://render.com) → **New → Blueprint** → connect the repo. Render reads [`render.yaml`](render.yaml) and creates a free Docker web service.
 3. Fill in the prompted secrets: `GROQ_API_KEY`, `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`. `WHATSAPP_VERIFY_TOKEN` is generated for you.
 4. Wait for the deploy, then open `https://<service>.onrender.com/health` → `{"status":"ok",...}`.
-5. Use `https://<service>.onrender.com/webhook` as the Callback URL in [Meta setup](#-whatsapp-setup-meta) step 8, and update the live‑demo link at the top of this README.
+5. Use `https://<service>.onrender.com/webhook` as the Callback URL in [Meta setup](#-whatsapp-setup-meta) step 8.
 
 **Free‑tier caveats (and how the design copes):**
 - The service **sleeps after ~15 min idle**; the first request takes ~30–60 s to wake it. If Meta times out and retries the webhook, **message‑id deduplication** prevents double replies. (Optional: an uptime monitor pinging `/health` every 10 min keeps it warm.)
